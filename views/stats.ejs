@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Recursos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+</head>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    canvas {
+        max-width: 900px;
+        margin: 20px auto;
+    }
+    .conteiner {
+        max-width: 900px;
+        margin: auto;
+    }
+</style>
+<body>
+
+    <div class="container">
+        <h1>Monitor de Recursos</h1>
+
+        <h2>Uso del CPU %</h2>
+        <canvas id="cpuChart"></canvas>
+
+        <h2>Uso de la Memoria en MB</h2>
+        <canvas id="memoryChart"></canvas>
+
+        <h2>Número de Pods</h2>
+        <canvas id="podsChart"></canvas>
+
+        <h1>Lista de Pods</h1>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Id del Pod</th>
+                    <th>Uso del CPU (%)</th>
+                    <th>Memoria MB</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="podsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+            const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+            const podsCtx = document.getElementById('podsChart').getContext('2d');
+          
+
+            const cpuChart = new Chart(cpuCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'CPU %', data: [], borderColor: "blue", fill: false }] },
+                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+
+            const memoryChart = new Chart(memoryCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Memoria (MB)', data: [], borderColor: "red", fill: false }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            const podsChart = new Chart(podsCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Número de Pods', data: [], borderColor: "green", fill: false }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+            
+            function fetchStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                const timestamp = new Date().toLocaleTimeString();
+                /*Graficas de uso de de CPU */
+                cpuChart.data.labels.push(timestamp);  
+                cpuChart.data.datasets[0].data.push(data.master.cpu);
+                if (cpuChart.data.labels.length > 10) {
+                    cpuChart.data.labels.shift();
+                }
+                if (cpuChart.data.datasets[0].data.length > 10) {
+                    cpuChart.data.datasets[0].data.shift();
+                }
+                cpuChart.update();
+
+                 /*Graficas de uso de de Memoria */
+                 memoryChart.data.labels.push(timestamp);  
+                 memoryChart.data.datasets[0].data.push(data.master.memory);
+                if (memoryChart.data.labels.length > 20) {
+                    memoryChart.data.labels.shift();
+                }
+                if (memoryChart.data.datasets[0].data.length > 20) {
+                    memoryChart.data.datasets[0].data.shift();
+                }
+                memoryChart.update();
+
+               /*Graficas de uso de Pods*/
+               podsChart.data.labels.push(timestamp);  
+               podsChart.data.datasets[0].data.push(data.master.podsCount);
+                if (podsChart.data.labels.length > 20) {
+                    podsChart.data.labels.shift();
+                }
+                if (podsChart.data.datasets[0].data.length > 20) {
+                    podsChart.data.datasets[0].data.shift();
+                }
+                podsChart.update();
+                //Agregams los pods a la table de Pods
+                updatePodsTable(data.pods);
+                
+
+                })
+            }
+                        
+            function updatePodsTable(pods) {
+                const tableBody = document.getElementById('podsTable');
+                tableBody.innerHTML = '';
+                pods.forEach(pod => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pod.pid}</td>
+                        <td>${pod.cpu}</td>
+                        <td>${pod.memory}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="removePod('${pod.pid}')">Eliminar Pod</button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            fetchStats();
+            setInterval(fetchStats, 5000);
+        })
+        function removePod(podId) {
+    if (confirm(`¿Estás seguro de eliminar el Pod ${podId}?`)) {
+        fetch(`/api/remove-pod/${podId}`, { method: 'DELETE' })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert(data.message);
+                fetchStats(); // Recargar la lista de pods después de eliminar
+            })
+            .catch(error => console.error("❌ Error eliminando Pod:", error));
+    }
+}
+
+
+       
+    </script>
+
+</body>
+</html>

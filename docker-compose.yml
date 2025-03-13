@@ -1,0 +1,26 @@
+version: '3' # Definimos la versión de Docker Compose
+
+services: # Definimos los servicios
+  citas-medicas: # API 
+    build:
+      context: .  # Indicamos la ruta para construir el servicio
+      dockerfile: Dockerfile  # Especificamos el nombre del archivo Dockerfile
+    image: edydesantiago/citas-medicas
+    ports:
+      - "3001:3000"
+    depends_on:
+      - mongo # Depende del servicio MongoDB
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/citas_medicas_db # Usamos el nombre del servicio en lugar de 127.0.0.1
+    command: node app.js # Nos aseguramos de iniciar la aplicación correctamente
+
+  mongo: # Servicio de MongoDB
+    image: mongo:6.0 # Imagen oficial de MongoDB
+    container_name: mongo # Nombre del contenedor
+    ports:
+      - "27017:27017" # Mapeo del puerto de MongoDB
+    volumes:
+      - mongo-data:/data/db # Montar volumen persistente para la base de datos
+
+volumes: # Definimos los volúmenes
+  mongo-data: # Nombre del volumen para almacenar los datos de MongoDB

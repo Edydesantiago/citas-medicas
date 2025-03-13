@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: citas-medicas
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: citas-medicas
+  template:
+    metadata:
+      labels:
+        app: citas-medicas
+    spec:
+      containers:
+      - name: citas-medicas
+        image: edydesantiago/citas-medicas:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URI
+          value: "mongodb://mongo-service:27017/citas_medicas_db"

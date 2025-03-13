@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Recursos</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.0.1/socket.io.min.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Monitor de Recursos</h1>
+
+        <h2>Uso del CPU %</h2>
+        <canvas id="cpuChart"></canvas>
+
+        <h2>Uso de la Memoria en MB</h2>
+        <canvas id="memoryChart"></canvas>
+
+        <h2>Número de Pods</h2>
+        <canvas id="podsChart"></canvas>
+
+        <h1>Lista de Pods</h1>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Id del Pod</th>
+                    <th>Uso del CPU (%)</th>
+                    <th>Memoria MB</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="podsTable"></tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+            const memoryCtx = document.getElementById('memoryChart').getContext('2d');
+            const podsCtx = document.getElementById('podsChart').getContext('2d');
+          
+
+            const cpuChart = new Chart(cpuCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'CPU %', data: [], borderColor: "blue", fill: false }] },
+                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+            });
+
+            const memoryChart = new Chart(memoryCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Memoria (MB)', data: [], borderColor: "red", fill: false }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+            const podsChart = new Chart(podsCtx, {
+                type: 'line',
+                data: { labels: [], datasets: [{ label: 'Número de Pods', data: [], borderColor: "green", fill: false }] },
+                options: { scales: { y: { beginAtZero: true } } }
+            });
+
+        });
+    </script>
+
+</body>
+</html>
